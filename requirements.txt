@@ -1,0 +1,2 @@
+voicevox-client==0.2.0
+deep-translator==1.9.2
