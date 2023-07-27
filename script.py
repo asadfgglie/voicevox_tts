@@ -46,12 +46,8 @@ def connect():
         params['selected_voice'] = [i for i in speakers.keys()][0]
         params['selected_style'] = speakers[params['selected_voice']].styles[0].name
         params['speaker_id'] = speakers[params['selected_voice']].styles[0].id
-
-        now_style = {}
-        for i in speakers[params['selected_voice']].styles:
-            now_style[i.name] = i
-        return [gr.Dropdown.update(choices=[i for i in speakers.keys()], value=params['selected_voice']), gr.Dropdown.update(value=params['selected_style'], choices=[i for i in now_style.keys()])]
-    return [gr.Dropdown.update(), gr.Dropdown.update()]
+        return gr.Dropdown.update(choices=[i for i in speakers.keys()], value=params['selected_voice'])
+    return gr.Dropdown.update()
 connect()
 
 def update_style(speaker_name):
@@ -91,7 +87,7 @@ def ui():
     style.change(lambda x: params.update({'selected_style': x, 'speaker_id': now_style[x].id if not (x is None) else None}), style, None)
     interrogative_speak.change(lambda  x: params.update({'interrogative_speak': x}), interrogative_speak, None)
     translate.change(lambda x: params.update({'translate': x}), translate, None)
-    connect.click(lambda x: params.update({'url': x}), engine, None).then(connect, None, [voice, style])
+    connect.click(lambda x: params.update({'url': x}), engine, None).then(connect, None, voice)
 
 def output_modifier(string, state):
     global params, wav_idx
