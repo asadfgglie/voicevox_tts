@@ -1,4 +1,3 @@
-import asyncio
 import re
 from pathlib import Path
 
@@ -46,8 +45,12 @@ def connect():
         params['selected_voice'] = [i for i in speakers.keys()][0]
         params['selected_style'] = speakers[params['selected_voice']].styles[0].name
         params['speaker_id'] = speakers[params['selected_voice']].styles[0].id
-        return gr.Dropdown.update(choices=[i for i in speakers.keys()], value=params['selected_voice'])
-    return gr.Dropdown.update()
+        now_style = {}
+        for i in speakers[params['selected_voice']].styles:
+            now_style[i.name] = i
+        return gr.Dropdown.update(choices=[i for i in speakers.keys()], value=params['selected_voice']), gr.Dropdown.update(value=params['selected_style'], choices=[i for i in now_style.keys()]), gr.Checkbox.update(interactive=True)
+    params['activate'] = False
+    return gr.Dropdown.update(), gr.Dropdown.update(), gr.Checkbox.update(interactive=False)
 connect()
 
 def update_style(speaker_name):
@@ -68,7 +71,8 @@ def ui():
     with gr.Accordion("Setting", open=True):
         # Gradio elements
         with gr.Row():
-            activate = gr.Checkbox(value=params['activate'], label='Activate TTS')
+            activate = gr.Checkbox(value=params['activate'], label='Activate TTS', interactive=len(speakers) != 0,
+                                   info="If extension can't connect to voicevox engine, it will be disable.")
             autoplay = gr.Checkbox(value=params['autoplay'], label='Play TTS automatically')
             translate = gr.Checkbox(value=params['translate'], label='Translate model output into Japanese for voicevox')
 
@@ -78,7 +82,7 @@ def ui():
             interrogative_speak = gr.Checkbox(value=params['interrogative_speak'], label='interrogative speak')
         with gr.Row():
             engine = gr.Textbox(value=params['url'], label='voicevox engine url')
-            connect = gr.Button(value='Refresh')
+            refresh_connect = gr.Button(value='Refresh')
 
     # Event functions to update the parameters in the backend
     activate.change(lambda x: params.update({'activate': x}), activate, None)
@@ -87,7 +91,7 @@ def ui():
     style.change(lambda x: params.update({'selected_style': x, 'speaker_id': now_style[x].id if not (x is None) else None}), style, None)
     interrogative_speak.change(lambda  x: params.update({'interrogative_speak': x}), interrogative_speak, None)
     translate.change(lambda x: params.update({'translate': x}), translate, None)
-    connect.click(lambda x: params.update({'url': x}), engine, None).then(connect, None, voice)
+    refresh_connect.click(lambda x: params.update({'url': x}), engine, None).then(connect, None, [voice, style, activate])
 
 def output_modifier(string, state):
     global params, wav_idx
