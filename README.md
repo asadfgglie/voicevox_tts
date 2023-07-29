@@ -28,3 +28,12 @@ pip install -r requirements.txt
 2. Enable this extension
 3. Select Speaker, style
 4. Chat with bot!
+
+# Feature
+
+---
+<img src="feature.png"/>
+
+* You can test voice by click `Play` button.
+* You can change your voicevox engine server by click `Refresh` button.
+* You can change speaker by change `TTS voice`.

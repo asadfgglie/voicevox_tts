@@ -1,6 +1,10 @@
 import re
+from io import BytesIO
 from pathlib import Path
+from wave import Wave_read
 
+import numpy as np
+import sounddevice as sd
 import anyio
 import gradio as gr
 from deep_translator import GoogleTranslator
@@ -40,7 +44,9 @@ def connect():
         except:
             pass
         return temp
+
     speakers = anyio.run(tmp)
+
     if len(speakers) != 0:
         params['selected_voice'] = [i for i in speakers.keys()][0]
         params['selected_style'] = speakers[params['selected_voice']].styles[0].name
@@ -48,9 +54,15 @@ def connect():
         now_style = {}
         for i in speakers[params['selected_voice']].styles:
             now_style[i.name] = i
-        return gr.Dropdown.update(choices=[i for i in speakers.keys()], value=params['selected_voice']), gr.Dropdown.update(value=params['selected_style'], choices=[i for i in now_style.keys()]), gr.Checkbox.update(interactive=True)
+        return gr.Dropdown.update(choices=[i for i in speakers.keys()], value=params['selected_voice']), \
+               gr.Dropdown.update(choices=[i for i in now_style.keys()]), \
+               gr.Checkbox.update(interactive=True), gr.Button.update(interactive=True)
     params['activate'] = False
-    return gr.Dropdown.update(), gr.Dropdown.update(), gr.Checkbox.update(interactive=False)
+
+    return gr.Dropdown.update(), \
+           gr.Dropdown.update(), \
+           gr.Checkbox.update(interactive=False), \
+           gr.Button.update(interactive=False)
 connect()
 
 def update_style(speaker_name):
@@ -58,14 +70,21 @@ def update_style(speaker_name):
     now_style = {}
     for i in speakers[speaker_name].styles:
         now_style[i.name] = i
-
-    return gr.Dropdown.update(choices=[i for i in now_style.keys()], value=None)
-
+    c = [i for i in now_style.keys()]
+    return gr.Dropdown.update(choices=c, value=c[0])
 
 async def get_voice_bytes(speaker_id: int, text: str, interrogative_speak: bool):
     async with Client() as client:
         return await (await client.create_audio_query(text, speaker_id)).synthesis(speaker=speaker_id, enable_interrogative_upspeak=interrogative_speak)
 
+def play_test():
+    text = 'この音はテストです。 今日はお腹いっぱいですか？'
+    audio = anyio.run(get_voice_bytes, params['speaker_id'], text, params['interrogative_speak'])
+    with Wave_read(BytesIO(audio)) as w:
+        sr = w.getframerate()
+        array = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16)
+    sd.play(array, sr)
+    sd.wait()
 
 def ui():
     with gr.Accordion("Setting", open=True):
@@ -78,8 +97,10 @@ def ui():
 
         with gr.Row():
             voice = gr.Dropdown(value=params['selected_voice'], choices=[i for i in speakers.keys()], label='TTS Voice')
-            style = gr.Dropdown(value=params['selected_style'], choices=[], label='Voice style')
+            style = gr.Dropdown(value=params['selected_style'], choices=[i.name for i in speakers[params['selected_voice']].styles] if len(speakers) != 0 else [], label='Voice style')
             interrogative_speak = gr.Checkbox(value=params['interrogative_speak'], label='interrogative speak')
+            play = gr.Button(value='Play', interactive=len(speakers) != 0,
+                                 info="If extension can't connect to voicevox engine, it will be disable.")
         with gr.Row():
             engine = gr.Textbox(value=params['url'], label='voicevox engine url')
             refresh_connect = gr.Button(value='Refresh')
@@ -91,7 +112,8 @@ def ui():
     style.change(lambda x: params.update({'selected_style': x, 'speaker_id': now_style[x].id if not (x is None) else None}), style, None)
     interrogative_speak.change(lambda  x: params.update({'interrogative_speak': x}), interrogative_speak, None)
     translate.change(lambda x: params.update({'translate': x}), translate, None)
-    refresh_connect.click(lambda x: params.update({'url': x}), engine, None).then(connect, None, [voice, style, activate])
+    refresh_connect.click(lambda x: params.update({'url': x}), engine, None).then(connect, None, [voice, style, activate, play])
+    play.click(play_test, None, None)
 
 def output_modifier(string, state):
     global params, wav_idx
