@@ -71,6 +71,8 @@ def update_style(speaker_name):
     for i in speakers[speaker_name].styles:
         now_style[i.name] = i
     c = [i for i in now_style.keys()]
+    params['selected_style'] = c[0]
+    params['speaker_id'] = now_style[c[0]].id
     return gr.Dropdown.update(choices=c, value=c[0])
 
 async def get_voice_bytes(speaker_id: int, text: str, interrogative_speak: bool):
@@ -87,7 +89,7 @@ def play_test():
     sd.wait()
 
 def ui():
-    with gr.Accordion("Setting", open=True):
+    with gr.Accordion("Voicevox", open=True):
         # Gradio elements
         with gr.Row():
             activate = gr.Checkbox(value=params['activate'], label='Activate TTS', interactive=len(speakers) != 0,
