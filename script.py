@@ -1,6 +1,7 @@
 import re
 from io import BytesIO
 from pathlib import Path
+from threading import Thread
 from wave import Wave_read
 
 import numpy as np
@@ -13,7 +14,7 @@ from voicevox import Client, Style
 from modules import shared
 
 params: dict[str, None|bool|int|str] = {
-    'activate': True,
+    'activate': False,
     'selected_voice': None,
     'autoplay': False,
     'selected_style': None,
@@ -63,7 +64,6 @@ def connect():
            gr.Dropdown.update(), \
            gr.Checkbox.update(interactive=False), \
            gr.Button.update(interactive=False)
-connect()
 
 def update_style(speaker_name):
     global now_style, speakers
@@ -87,6 +87,9 @@ def play_test():
         array = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16)
     sd.play(array, sr)
     sd.wait()
+
+def setup():
+    Thread(target=connect, args=()).start()
 
 def ui():
     with gr.Accordion("Voicevox", open=True):
