@@ -1,3 +1,5 @@
+
+
 # voicevox-tts
 
 ---
@@ -18,7 +20,7 @@ conda activate textgen
 pip install -r requirements.txt
 ```
 4. Install voicevox engine following by [VOICEVOX/voicevox_engine](https://github.com/VOICEVOX/voicevox_engine#%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89)
-5. Start text-generation-webui and go to `Session` > `Install or update an extension`, and put https://github.com/asadfgglie/voicevox-tts in it.
+5. Start text-generation-webui and go to `Extension` > `Install or update an extension`, and put https://github.com/asadfgglie/voicevox-tts in it.
 6. Press `ENTER` to install
 
 # How to use
